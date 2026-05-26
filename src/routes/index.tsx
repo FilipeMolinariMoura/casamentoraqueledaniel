@@ -407,18 +407,24 @@ function Footer() {
 
 function MusicPlayer() {
   const [playing, setPlaying] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  const videoId = "M-AMu_iAcf8";
-  const src = playing
-    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&playsinline=1`
-    : "";
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  function toggle() {
+    const a = audioRef.current;
+    if (!a) return;
+    if (playing) {
+      a.pause();
+      setPlaying(false);
+    } else {
+      a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    }
+  }
+
   return (
     <>
       <div className="fixed bottom-5 right-5 z-50">
         <button
-          onClick={() => setPlaying((p) => !p)}
+          onClick={toggle}
           aria-label={playing ? "Pausar música" : "Tocar música"}
           className="flex items-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition"
         >
@@ -429,14 +435,14 @@ function MusicPlayer() {
           {playing && <VolumeX className="w-3 h-3 opacity-70" />}
         </button>
       </div>
-      {playing && (
-        <iframe
-          src={src}
-          allow="autoplay"
-          title="Música de fundo"
-          className="fixed -bottom-10 -right-10 w-1 h-1 opacity-0 pointer-events-none"
-        />
-      )}
+      <audio
+        ref={audioRef}
+        src="/background-music.mp3"
+        loop
+        preload="auto"
+        onPause={() => setPlaying(false)}
+        onPlay={() => setPlaying(true)}
+      />
     </>
   );
 }
