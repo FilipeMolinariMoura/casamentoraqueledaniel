@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
-import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles } from "lucide-react";
+import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles, Shirt } from "lucide-react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
@@ -171,10 +171,11 @@ function Details() {
           <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3">Save the Date</p>
           <h2 className="font-serif text-5xl md:text-6xl">Detalhes do Grande Dia</h2>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card icon={<Calendar className="w-6 h-6" />} title="Data" lines={["20 de Junho", "Sábado"]} />
           <Card icon={<Clock className="w-6 h-6" />} title="Horário" lines={["11h30", "Pontualmente"]} />
           <Card icon={<MapPin className="w-6 h-6" />} title="Local" lines={["Yellow Door Pub", "Catanduva - SP"]} />
+          <Card icon={<Shirt className="w-6 h-6" />} title="Traje" lines={["Social leve / esporte fino 🤍", "Pense em um look bonito e confortável para curtir esse dia especial com a gente."]} />
         </div>
         <div className="mt-8 rounded-2xl overflow-hidden border border-border shadow-sm">
           <iframe
