@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
-import { MapPin, Clock, Calendar, Heart, UtensilsCrossed } from "lucide-react";
+import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles } from "lucide-react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
@@ -47,6 +47,7 @@ function Index() {
       <Hero />
       <Story />
       <Details />
+      <Celebration />
       <Menu />
       <RSVP />
       <Footer />
@@ -63,6 +64,7 @@ function Nav() {
         <div className="hidden md:flex gap-8 text-sm">
           <a href="#nossa-historia" className="hover:text-accent transition">Nossa História</a>
           <a href="#detalhes" className="hover:text-accent transition">Detalhes</a>
+          <a href="#celebracao" className="hover:text-accent transition">Celebração</a>
           <a href="#cardapio" className="hover:text-accent transition">Cardápio</a>
           <a href="#rsvp" className="hover:text-accent transition">Confirmar Presença</a>
         </div>
@@ -192,6 +194,28 @@ function Details() {
             <MapPin className="w-4 h-4" /> Como chegar
           </a>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Celebration() {
+  return (
+    <section id="celebracao" className="py-24 px-6">
+      <div className="max-w-3xl mx-auto text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent/20 text-accent-foreground mb-6">
+          <Sparkles className="w-6 h-6" />
+        </div>
+        <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3">Comemoração</p>
+        <h2 className="font-serif text-5xl md:text-6xl mb-6">Um dia especial</h2>
+        <p className="text-muted-foreground leading-relaxed mb-6">
+          Esta celebração é a nossa forma de compartilhar a alegria do nosso casamento civil com quem amamos.
+          Será um momento de confraternização, amor e muita festa no Yellow Door Pub!
+        </p>
+        <p className="text-muted-foreground leading-relaxed">
+          Queremos que todos aproveitem com tranquilidade: cada convidado fica responsável pelo seu próprio consumo no local.
+          Assim, cada um escolhe o que deseja e curte o dia do seu jeito.
+        </p>
       </div>
     </section>
   );
