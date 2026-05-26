@@ -72,14 +72,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Nosso Casamento — 20.06" },
+      { name: "description", content: "Confirme sua presença no nosso casamento. 20 de junho, Yellow Door Pub, Catanduva." },
+      { property: "og:title", content: "Nosso Casamento — 20.06" },
+      { property: "og:description", content: "Confirme sua presença no nosso casamento. 20 de junho, Yellow Door Pub, Catanduva." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
