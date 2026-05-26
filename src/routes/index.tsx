@@ -6,6 +6,15 @@ import { MapPin, Clock, Calendar, Heart, UtensilsCrossed } from "lucide-react";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
 import couple3 from "@/assets/couple-3.jpeg";
+import g1 from "@/assets/gallery-1.jpeg";
+import g2 from "@/assets/gallery-2.jpeg";
+import g3 from "@/assets/gallery-3.jpeg";
+import g4 from "@/assets/gallery-4.jpeg";
+import g5 from "@/assets/gallery-5.jpeg";
+import g6 from "@/assets/gallery-6.jpeg";
+import g7 from "@/assets/gallery-7.jpeg";
+import g8 from "@/assets/gallery-8.jpeg";
+import g9 from "@/assets/gallery-9.jpeg";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -121,8 +130,31 @@ function Story() {
             <img src={couple2} alt="Natal" className="w-full h-full object-cover rounded-2xl aspect-square" />
           </div>
         </div>
+        <Marquee />
       </div>
     </section>
+  );
+}
+
+function Marquee() {
+  const imgs = [g1, g2, g3, g4, g5, g6, g7, g8, g9];
+  const loop = [...imgs, ...imgs];
+  return (
+    <div className="mt-10 relative overflow-hidden marquee-mask">
+      <div className="flex gap-4 marquee-track w-max">
+        {loop.map((src, i) => (
+          <div key={i} className="shrink-0 w-56 md:w-72 aspect-[3/4] rounded-2xl overflow-hidden shadow-sm">
+            <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+          </div>
+        ))}
+      </div>
+      <style>{`
+        .marquee-track{animation:marquee 50s linear infinite}
+        .marquee-track:hover{animation-play-state:paused}
+        @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+        .marquee-mask{mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent)}
+      `}</style>
+    </div>
   );
 }
 
