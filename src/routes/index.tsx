@@ -379,3 +379,39 @@ function Footer() {
     </footer>
   );
 }
+
+function MusicPlayer() {
+  const [playing, setPlaying] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  const videoId = "M-AMu_iAcf8";
+  const src = playing
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&playsinline=1`
+    : "";
+  return (
+    <>
+      <div className="fixed bottom-5 right-5 z-50">
+        <button
+          onClick={() => setPlaying((p) => !p)}
+          aria-label={playing ? "Pausar música" : "Tocar música"}
+          className="flex items-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition"
+        >
+          {playing ? <Volume2 className="w-4 h-4 animate-pulse" /> : <Music className="w-4 h-4" />}
+          <span className="text-xs font-medium hidden sm:inline">
+            {playing ? "Tocando" : "Tocar música"}
+          </span>
+          {playing && <VolumeX className="w-3 h-3 opacity-70" />}
+        </button>
+      </div>
+      {playing && (
+        <iframe
+          src={src}
+          allow="autoplay"
+          title="Música de fundo"
+          className="fixed -bottom-10 -right-10 w-1 h-1 opacity-0 pointer-events-none"
+        />
+      )}
+    </>
+  );
+}
