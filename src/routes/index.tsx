@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
-import { MapPin, Clock, Calendar, Heart, UtensilsCrossed } from "lucide-react";
+import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles } from "lucide-react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
@@ -47,6 +47,7 @@ function Index() {
       <Hero />
       <Story />
       <Details />
+      <Celebration />
       <Menu />
       <RSVP />
       <Footer />
@@ -63,6 +64,7 @@ function Nav() {
         <div className="hidden md:flex gap-8 text-sm">
           <a href="#nossa-historia" className="hover:text-accent transition">Nossa História</a>
           <a href="#detalhes" className="hover:text-accent transition">Detalhes</a>
+          <a href="#celebracao" className="hover:text-accent transition">Celebração</a>
           <a href="#cardapio" className="hover:text-accent transition">Cardápio</a>
           <a href="#rsvp" className="hover:text-accent transition">Confirmar Presença</a>
         </div>
