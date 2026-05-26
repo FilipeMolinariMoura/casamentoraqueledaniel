@@ -47,7 +47,7 @@ function Nav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/70 border-b border-border/40">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <a href="#top" className="font-serif text-xl tracking-wide">G &amp; ❤</a>
+        <a href="#top" className="font-serif text-xl tracking-wide">R &amp; D</a>
         <div className="hidden md:flex gap-8 text-sm">
           <a href="#nossa-historia" className="hover:text-accent transition">Nossa História</a>
           <a href="#detalhes" className="hover:text-accent transition">Detalhes</a>
@@ -70,10 +70,10 @@ function Hero() {
       </div>
       <div className="relative z-10 text-center px-6 text-white max-w-3xl">
         <p className="uppercase tracking-[0.4em] text-sm mb-6 opacity-90">Vamos nos casar</p>
-        <h1 className="font-serif text-6xl md:text-8xl leading-none mb-6">
-          Giovanna<br />
+          <h1 className="font-serif text-6xl md:text-8xl leading-none mb-6">
+          Raquel<br />
           <span className="italic font-light text-4xl md:text-5xl">&amp;</span><br />
-          Noivo
+          Daniel
         </h1>
         <div className="flex items-center justify-center gap-4 text-sm uppercase tracking-widest mb-10">
           <span>20 de Junho</span>
@@ -338,7 +338,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Footer() {
   return (
     <footer className="py-12 text-center text-sm text-muted-foreground border-t border-border">
-      <p className="font-serif text-2xl text-foreground mb-2">Giovanna &amp; Noivo</p>
+      <p className="font-serif text-2xl text-foreground mb-2">Raquel &amp; Daniel</p>
       <p>20 de Junho • Yellow Door Pub • Catanduva</p>
       <p className="mt-4 opacity-70">Feito com 💛</p>
     </footer>
