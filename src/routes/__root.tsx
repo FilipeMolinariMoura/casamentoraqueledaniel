@@ -72,12 +72,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Raquel & Daniel — 20.06" },
-      { name: "description", content: "Confirme sua presença no casamento de Raquel e Daniel. 20 de junho, Yellow Door Pub, Catanduva." },
-      { property: "og:title", content: "Raquel & Daniel — 20.06" },
-      { property: "og:description", content: "Confirme sua presença no casamento de Raquel e Daniel. 20 de junho, Yellow Door Pub, Catanduva." },
+      { title: "Raquel & Daniel - 20.06" },
+      { name: "description", content: "Confirme sua presença na celebração do casamento de Raquel & Daniel. 20 de junho, Yellow Door Pub, Catanduva." },
+      { property: "og:title", content: "Raquel & Daniel - 20.06" },
+      { property: "og:description", content: "Confirme sua presença na celebração do casamento de Raquel & Daniel. 20 de junho, Yellow Door Pub, Catanduva." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Raquel & Daniel - 20.06" },
+      { name: "twitter:description", content: "Confirme sua presença na celebração do casamento de Raquel & Daniel. 20 de junho, Yellow Door Pub, Catanduva." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d393f254-d47e-4a85-890f-250bcef4bb32/id-preview-41587c56--c9fea8a4-9257-4ada-a2ae-3f9fa4a38709.lovable.app-1779817657057.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d393f254-d47e-4a85-890f-250bcef4bb32/id-preview-41587c56--c9fea8a4-9257-4ada-a2ae-3f9fa4a38709.lovable.app-1779817657057.png" },
     ],
     links: [
       {
