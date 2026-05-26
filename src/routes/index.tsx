@@ -104,10 +104,10 @@ function Story() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16">
           <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3">Nossa História</p>
-          <h2 className="font-serif text-5xl md:text-6xl">De Catanduva a Paris</h2>
-          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Cada momento ao seu lado se tornou inesquecível. Agora chegou a hora
-            de celebrar esse amor com quem amamos. Será uma honra ter você conosco.
+          <h2 className="font-serif text-5xl md:text-6xl">Da escola pra vida</h2>
+          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto leading-relaxed whitespace-pre-line">
+            Quem diria que dois adolescentes se conhecendo no último ano da escola chegariam até aqui, hein?{"\n"}
+            Entre sonhos, desafios, viagens, trabalho lado a lado e tantos momentos inesquecíveis, fomos construindo a nossa história dia após dia, sempre com Deus guiando os nossos passos. Depois de 4 anos juntos, seguimos escolhendo um ao outro e agora, com o coração cheio de amor, estamos prontos para começar o nosso “para sempre”. 💍🤍
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
