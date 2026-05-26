@@ -172,7 +172,7 @@ function Details() {
         <div className="grid md:grid-cols-3 gap-6">
           <Card icon={<Calendar className="w-6 h-6" />} title="Data" lines={["20 de Junho", "Sábado"]} />
           <Card icon={<Clock className="w-6 h-6" />} title="Horário" lines={["11h30", "Pontualmente"]} />
-          <Card icon={<MapPin className="w-6 h-6" />} title="Local" lines={["Yellow Door Pub", "Catanduva — SP"]} />
+          <Card icon={<MapPin className="w-6 h-6" />} title="Local" lines={["Yellow Door Pub", "Catanduva - SP"]} />
         </div>
         <div className="mt-8 rounded-2xl overflow-hidden border border-border shadow-sm">
           <iframe
