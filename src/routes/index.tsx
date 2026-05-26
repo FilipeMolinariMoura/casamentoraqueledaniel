@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
 import { MapPin, Clock, Calendar, Heart, UtensilsCrossed } from "lucide-react";
+import { Music, Volume2, VolumeX } from "lucide-react";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
 import couple3 from "@/assets/couple-3.jpeg";
@@ -24,12 +25,13 @@ const WEDDING_DATE = new Date("2026-06-20T11:30:00-03:00");
 const RSVP_DEADLINE = new Date("2026-06-01T23:59:59-03:00");
 
 function useCountdown(target: Date) {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-  const diff = Math.max(0, target.getTime() - now.getTime());
+  const diff = now ? Math.max(0, target.getTime() - now.getTime()) : 0;
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff / 3600000) % 24);
   const minutes = Math.floor((diff / 60000) % 60);
@@ -48,6 +50,7 @@ function Index() {
       <Menu />
       <RSVP />
       <Footer />
+      <MusicPlayer />
     </div>
   );
 }
