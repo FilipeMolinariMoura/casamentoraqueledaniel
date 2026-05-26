@@ -209,11 +209,11 @@ function Celebration() {
         <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3">Comemoração</p>
         <h2 className="font-serif text-5xl md:text-6xl mb-6">Um dia especial</h2>
         <p className="text-muted-foreground leading-relaxed mb-6">
-          Esta celebração é a nossa forma de compartilhar a alegria do nosso casamento civil com quem amamos.
-          Será um momento de confraternização, amor e muita festa no Yellow Door Pub!
+          Esta celebração é a nossa forma de compartilhar a alegria do nosso casamento com quem amamos.
+          Será um momento de confraternização após o casamento civil, com amor e muita festa no Yellow Door Pub!
         </p>
         <p className="text-muted-foreground leading-relaxed">
-          Queremos que todos aproveitem com tranquilidade: cada convidado fica responsável pelo seu próprio consumo no local.
+          Atenção: cada convidado fica responsável pelo seu próprio consumo no local.
           Assim, cada um escolhe o que deseja e curte o dia do seu jeito.
         </p>
       </div>
