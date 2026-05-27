@@ -2,7 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
-import { Lock, Users, CheckCircle2, XCircle, Download, LogOut, ArrowLeft, Search, Filter, Ticket } from "lucide-react";
+import {
+  Lock, Users, CheckCircle2, XCircle, Download, LogOut,
+  ArrowLeft, Search, Ticket, Trash2, RefreshCw, MessageSquare
+} from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { TicketCard, downloadTicket } from "@/components/TicketCard";
 
@@ -21,29 +24,24 @@ function Admin() {
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPresence, setFilterPresence] = useState<"todos" | "sim" | "nao">("todos");
+  const [filterAcompanhantes, setFilterAcompanhantes] = useState<"todos" | "com" | "sem">("todos");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [expandedMsgId, setExpandedMsgId] = useState<string | null>(null);
 
-  // Get current session and listen to changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch RSVPs when session changes
   useEffect(() => {
-    if (session) {
-      fetchRSVPs();
-    } else {
-      setLoadingData(false);
-    }
+    if (session) fetchRSVPs();
+    else setLoadingData(false);
   }, [session]);
 
   async function fetchRSVPs() {
@@ -53,29 +51,39 @@ function Admin() {
         .from("rsvps")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       setRsvps(data || []);
     } catch (err: any) {
-      console.error(err);
       toast.error("Erro ao carregar confirmações: " + err.message);
     } finally {
       setLoadingData(false);
     }
   }
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("Por favor, preencha email e senha.");
+  async function handleDelete(id: string, nome: string) {
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
       return;
     }
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.from("rsvps").delete().eq("id", id);
+      if (error) throw error;
+      setRsvps((prev) => prev.filter((r) => r.id !== id));
+      toast.success(`"${nome}" removido com sucesso.`);
+    } catch (err: any) {
+      toast.error("Erro ao remover: " + err.message);
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setLoadingLogin(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Login efetuado com sucesso!");
     } catch (err: any) {
@@ -86,21 +94,13 @@ function Admin() {
   }
 
   async function handleLogout() {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setRsvps([]);
-      toast.success("Logout efetuado!");
-    } catch (err: any) {
-      toast.error("Erro ao sair: " + err.message);
-    }
+    await supabase.auth.signOut();
+    setRsvps([]);
+    toast.success("Logout efetuado!");
   }
 
   function exportToCSV() {
-    if (rsvps.length === 0) {
-      toast.error("Não há respostas para exportar.");
-      return;
-    }
+    if (rsvps.length === 0) { toast.error("Não há respostas para exportar."); return; }
     const headers = ["Nome", "Presença", "Acompanhantes", "Nomes dos Acompanhantes", "Telefone", "Mensagem", "Data de Envio"];
     const rows = rsvps.map((r) => [
       r.nome,
@@ -108,18 +108,13 @@ function Admin() {
       r.acompanhantes,
       r.nomes_acompanhantes || "",
       r.telefone || "",
-      (r.mensagem || "").replace(/\r?\n|\r/g, " "), // strip newlines
+      (r.mensagem || "").replace(/\r?\n|\r/g, " "),
       new Date(r.created_at).toLocaleString("pt-BR"),
     ]);
-
-    // Use semicolon separation and BOM for Portuguese Excel encoding
-    const csvContent =
-      "\uFEFF" +
-      [
-        headers.join(";"),
-        ...rows.map((e) => e.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(";")),
-      ].join("\n");
-
+    const csvContent = "\uFEFF" + [
+      headers.join(";"),
+      ...rows.map((e) => e.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(";")),
+    ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -132,21 +127,25 @@ function Admin() {
     toast.success("Lista exportada com sucesso!");
   }
 
-  // Filtered RSVPs list
+  // Filters
   const filteredRsvps = rsvps.filter((r) => {
-    const matchesSearch = r.nome.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (r.telefone && r.telefone.includes(searchQuery));
+    const matchesSearch =
+      r.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.telefone && r.telefone.includes(searchQuery)) ||
+      (r.nomes_acompanhantes && r.nomes_acompanhantes.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesPresence = filterPresence === "todos" || r.presenca === filterPresence;
-    return matchesSearch && matchesPresence;
+    const matchesAcomp =
+      filterAcompanhantes === "todos" ||
+      (filterAcompanhantes === "com" && r.acompanhantes > 0) ||
+      (filterAcompanhantes === "sem" && r.acompanhantes === 0);
+    return matchesSearch && matchesPresence && matchesAcomp;
   });
 
-  // Stats calculation
-  const totalAnswers = rsvps.length;
+  // Stats
   const totalConfirmed = rsvps.filter((r) => r.presenca === "sim").length;
   const totalDeclined = rsvps.filter((r) => r.presenca === "nao").length;
   const totalHeadcount = rsvps.reduce(
-    (acc, curr) => (curr.presenca === "sim" ? acc + 1 + curr.acompanhantes : acc),
-    0
+    (acc, curr) => (curr.presenca === "sim" ? acc + 1 + curr.acompanhantes : acc), 0
   );
 
   return (
@@ -157,7 +156,7 @@ function Admin() {
       <nav className="backdrop-blur-md bg-background/70 border-b border-border/40 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="font-serif text-xl tracking-wide flex items-center gap-2 hover:opacity-80 transition">
-            <ArrowLeft className="w-4 h-4" /> R &amp; D
+            <ArrowLeft className="w-4 h-4" /> R & D
           </Link>
           <div className="font-serif text-lg font-medium">Painel do Casamento</div>
           {session && (
@@ -171,10 +170,9 @@ function Admin() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col max-w-6xl w-full mx-auto p-6">
         {!session ? (
-          /* Login Page */
+          /* Login */
           <div className="flex-1 flex items-center justify-center py-12">
             <div className="bg-card w-full max-w-md p-8 rounded-2xl border border-border shadow-md space-y-6">
               <div className="text-center space-y-2">
@@ -184,121 +182,125 @@ function Admin() {
                 <h1 className="font-serif text-3xl">Acesso Administrativo</h1>
                 <p className="text-sm text-muted-foreground">Insira as credenciais de admin do site.</p>
               </div>
-
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-sm font-medium">E-mail</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="exemplo@email.com"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-ring transition text-sm"
-                  />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="exemplo@email.com"
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-ring transition text-sm" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Senha</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-ring transition text-sm"
-                  />
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••"
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-ring transition text-sm" />
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={loadingLogin}
-                  className="w-full py-3 mt-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-60 cursor-pointer"
-                >
+                <button type="submit" disabled={loadingLogin}
+                  className="w-full py-3 mt-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-60 cursor-pointer">
                   {loadingLogin ? "Autenticando..." : "Entrar"}
                 </button>
               </form>
             </div>
           </div>
         ) : (
-          /* Dashboard Page */
-          <div className="space-y-8 animate-fade-in">
-            {/* Header / Stats Summary */}
+          /* Dashboard */
+          <div className="space-y-6 animate-fade-in">
+
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="font-serif text-4xl">Confirmações de Presença</h1>
                 <p className="text-muted-foreground text-sm mt-1">Gerencie a lista de convidados para o grande dia.</p>
               </div>
-              <button
-                onClick={exportToCSV}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm hover:opacity-90 transition cursor-pointer"
-              >
-                <Download className="w-4 h-4" /> Exportar Planilha (CSV)
-              </button>
-            </div>
-
-            {/* Stats Cards Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-card p-5 rounded-2xl border border-border shadow-sm text-center md:text-left space-y-2">
-                <div className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Respostas</div>
-                <div className="font-serif text-3xl md:text-4xl">{totalAnswers}</div>
-                <p className="text-[10px] text-muted-foreground">Total de formulários enviados</p>
-              </div>
-
-              <div className="bg-card p-5 rounded-2xl border border-border shadow-sm text-center md:text-left space-y-2">
-                <div className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-emerald-600 dark:text-emerald-400">Vão Comparecer</div>
-                <div className="font-serif text-3xl md:text-4xl text-emerald-600 dark:text-emerald-400 flex items-center justify-center md:justify-start gap-2">
-                  <CheckCircle2 className="w-6 h-6 shrink-0" /> {totalConfirmed}
-                </div>
-                <p className="text-[10px] text-muted-foreground">Famílias/Contatos confirmados</p>
-              </div>
-
-              <div className="bg-card p-5 rounded-2xl border border-border shadow-sm text-center md:text-left space-y-2">
-                <div className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-red-600 dark:text-red-400">Não Vão</div>
-                <div className="font-serif text-3xl md:text-4xl text-red-600 dark:text-red-400 flex items-center justify-center md:justify-start gap-2">
-                  <XCircle className="w-6 h-6 shrink-0" /> {totalDeclined}
-                </div>
-                <p className="text-[10px] text-muted-foreground">Recusaram o convite</p>
-              </div>
-
-              <div className="bg-card p-5 rounded-2xl border border-border shadow-sm text-center md:text-left space-y-2 bg-accent/10 border-accent/20">
-                <div className="text-accent-foreground text-xs uppercase tracking-wider font-medium">Total de Convidados</div>
-                <div className="font-serif text-3xl md:text-4xl text-primary flex items-center justify-center md:justify-start gap-2">
-                  <Users className="w-6 h-6 shrink-0" /> {totalHeadcount}
-                </div>
-                <p className="text-[10px] text-muted-foreground">Pessoas confirmadas (Titular + extras)</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchRSVPs}
+                  title="Atualizar lista"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-border text-sm hover:bg-secondary transition cursor-pointer"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span className="hidden sm:inline">Atualizar</span>
+                </button>
+                <button
+                  onClick={exportToCSV}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm hover:opacity-90 transition cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Exportar CSV
+                </button>
               </div>
             </div>
 
-            {/* Filters and List */}
-            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
+            {/* Stats - 3 cards only, cleaner */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-card p-5 rounded-2xl border border-border shadow-sm text-center space-y-1">
+                <div className="text-emerald-600 text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirmados
+                </div>
+                <div className="font-serif text-4xl text-emerald-600">{totalConfirmed}</div>
+              </div>
+              <div className="bg-card p-5 rounded-2xl border border-border shadow-sm text-center space-y-1">
+                <div className="text-red-500 text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-1.5">
+                  <XCircle className="w-3.5 h-3.5" /> Não Vão
+                </div>
+                <div className="font-serif text-4xl text-red-500">{totalDeclined}</div>
+              </div>
+              <div className="bg-accent/10 border-accent/30 p-5 rounded-2xl border shadow-sm text-center space-y-1">
+                <div className="text-accent-foreground text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" /> Total de Pessoas
+                </div>
+                <div className="font-serif text-4xl text-primary">{totalHeadcount}</div>
+              </div>
+            </div>
+
+            {/* Filters + Table */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+
               {/* Filter bar */}
-              <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between items-center bg-secondary/10">
-                <div className="relative w-full md:max-w-xs">
+              <div className="p-4 border-b border-border flex flex-col md:flex-row gap-3 items-center bg-secondary/10">
+                {/* Search */}
+                <div className="relative w-full md:max-w-sm">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Buscar por nome ou telefone..."
+                    placeholder="Buscar por nome, telefone ou acompanhante..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background outline-none focus:border-ring transition text-sm"
                   />
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1.5 hidden sm:inline-flex">
-                    <Filter className="w-4 h-4" /> Filtrar por presença:
-                  </span>
-                  <div className="flex bg-background border border-border rounded-xl p-0.5 text-xs w-full sm:w-auto">
+                <div className="flex gap-2 flex-wrap justify-end flex-1">
+                  {/* Presence filter */}
+                  <div className="flex bg-background border border-border rounded-xl p-0.5 text-xs">
                     {[
                       { id: "todos", label: "Todos" },
-                      { id: "sim", label: "Confirmados" },
-                      { id: "nao", label: "Ausentes" },
+                      { id: "sim", label: "✓ Confirmados" },
+                      { id: "nao", label: "✕ Ausentes" },
                     ].map((opt) => (
                       <button
                         key={opt.id}
                         onClick={() => setFilterPresence(opt.id as any)}
-                        className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer whitespace-nowrap ${
                           filterPresence === opt.id
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Companions filter */}
+                  <div className="flex bg-background border border-border rounded-xl p-0.5 text-xs">
+                    {[
+                      { id: "todos", label: "Todos" },
+                      { id: "com", label: "Com acomp." },
+                      { id: "sem", label: "Sem acomp." },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => setFilterAcompanhantes(opt.id as any)}
+                        className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer whitespace-nowrap ${
+                          filterAcompanhantes === opt.id
                             ? "bg-primary text-primary-foreground shadow-xs"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
@@ -310,7 +312,7 @@ function Admin() {
                 </div>
               </div>
 
-              {/* Table / List Container */}
+              {/* Table */}
               <div className="overflow-x-auto">
                 {loadingData ? (
                   <div className="p-12 text-center text-muted-foreground text-sm">Carregando lista de convidados...</div>
@@ -320,98 +322,175 @@ function Admin() {
                   <table className="w-full border-collapse text-left text-sm">
                     <thead>
                       <tr className="border-b border-border bg-secondary/20 text-muted-foreground text-xs uppercase tracking-wider">
-                        <th className="p-4 font-medium">Convidado / Acompanhantes</th>
+                        <th className="p-4 font-medium">Convidado</th>
                         <th className="p-4 font-medium">Presença</th>
-                        <th className="p-4 font-medium text-center">Acomp.</th>
                         <th className="p-4 font-medium">Telefone</th>
-                        <th className="p-4 font-medium">Mensagem</th>
                         <th className="p-4 font-medium">Data</th>
-                        <th className="p-4 font-medium text-center">Ingresso</th>
+                        <th className="p-4 font-medium text-center">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
-                        {filteredRsvps.map((rsvp) => {
-                          const ticketRef = { current: null as HTMLDivElement | null };
-                          return (
-                            <tr key={rsvp.id} className="hover:bg-secondary/10 transition">
-                              <td className="p-4 align-top">
-                                <div className="font-semibold text-foreground">{rsvp.nome}</div>
-                                {rsvp.nomes_acompanhantes && rsvp.presenca === "sim" && (
-                                  <div className="mt-2 space-y-1 pl-3 border-l-2 border-accent/40">
-                                    {rsvp.nomes_acompanhantes.split(",").map((cName, idx) => (
-                                      <div key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                        <span className="w-1 h-1 rounded-full bg-accent" />
-                                        <span>{cName.trim()} <span className="text-[10px] opacity-75 font-normal italic">(Acompanhante)</span></span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="p-4 align-top">
-                                {rsvp.presenca === "sim" ? (
+                      {filteredRsvps.map((rsvp) => {
+                        const ticketRef = { current: null as HTMLDivElement | null };
+                        const isConfirming = confirmDeleteId === rsvp.id;
+                        const isDeleting = deletingId === rsvp.id;
+                        const companions = rsvp.nomes_acompanhantes
+                          ? rsvp.nomes_acompanhantes.split(",").map((n) => n.trim()).filter(Boolean)
+                          : [];
+
+                        return (
+                          <tr
+                            key={rsvp.id}
+                            className={`hover:bg-secondary/10 transition ${isConfirming ? "bg-red-50/50 dark:bg-red-950/20" : ""}`}
+                          >
+                            {/* Name + companions */}
+                            <td className="p-4 align-top max-w-xs">
+                              <div className="font-semibold text-foreground">{rsvp.nome}</div>
+                              {companions.length > 0 && rsvp.presenca === "sim" && (
+                                <div className="mt-1.5 space-y-0.5 pl-3 border-l-2 border-accent/40">
+                                  {companions.map((cName, idx) => (
+                                    <div key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                      <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
+                                      <span>{cName} <span className="italic opacity-60">(acomp.)</span></span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Message expandable */}
+                              {rsvp.mensagem && (
+                                <button
+                                  onClick={() => setExpandedMsgId(expandedMsgId === rsvp.id ? null : rsvp.id)}
+                                  className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition cursor-pointer"
+                                >
+                                  <MessageSquare className="w-3 h-3" />
+                                  {expandedMsgId === rsvp.id ? "Ocultar mensagem" : "Ver mensagem"}
+                                </button>
+                              )}
+                              {expandedMsgId === rsvp.id && rsvp.mensagem && (
+                                <div className="mt-1.5 text-xs text-muted-foreground bg-secondary/30 rounded-lg p-2.5 italic leading-relaxed">
+                                  "{rsvp.mensagem}"
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Presence */}
+                            <td className="p-4 align-top">
+                              {rsvp.presenca === "sim" ? (
+                                <div className="space-y-1">
                                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                     Confirmou
                                   </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                    Não vai
-                                  </span>
-                                )}
-                              </td>
-                              <td className="p-4 align-top text-center">{rsvp.acompanhantes}</td>
-                              <td className="p-4 align-top text-muted-foreground font-mono text-xs">{rsvp.telefone || "-"}</td>
-                              <td className="p-4 align-top max-w-xs truncate text-muted-foreground" title={rsvp.mensagem || ""}>
-                                {rsvp.mensagem || "-"}
-                              </td>
-                              <td className="p-4 align-top text-muted-foreground text-xs">
-                                {new Date(rsvp.created_at).toLocaleDateString("pt-BR")}
-                              </td>
-                              <td className="p-4 align-top text-center">
-                                {/* Hidden ticket div for capture */}
-                                <div
-                                  style={{ position: "fixed", top: "-9999px", left: "-9999px", opacity: 0, pointerEvents: "none" }}
-                                >
+                                  {rsvp.acompanhantes > 0 && (
+                                    <div className="text-[11px] text-muted-foreground">
+                                      +{rsvp.acompanhantes} acomp.
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                  Não vai
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Phone */}
+                            <td className="p-4 align-top text-muted-foreground font-mono text-xs">
+                              {rsvp.telefone || "—"}
+                            </td>
+
+                            {/* Date */}
+                            <td className="p-4 align-top text-muted-foreground text-xs whitespace-nowrap">
+                              {new Date(rsvp.created_at).toLocaleDateString("pt-BR")}
+                              <div className="text-[10px] opacity-60">
+                                {new Date(rsvp.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            </td>
+
+                            {/* Actions */}
+                            <td className="p-4 align-top">
+                              <div className="flex items-center justify-center gap-2 flex-wrap">
+                                {/* Hidden ticket for download */}
+                                <div style={{ position: "fixed", top: "-9999px", left: "-9999px", opacity: 0, pointerEvents: "none" }}>
                                   <div ref={(el) => { ticketRef.current = el; }}>
-                                    <TicketCard data={{
-                                      nome: rsvp.nome,
-                                      acompanhantes: rsvp.acompanhantes,
-                                      nomes_acompanhantes: rsvp.nomes_acompanhantes,
-                                    }} />
+                                    <TicketCard data={{ nome: rsvp.nome, acompanhantes: rsvp.acompanhantes, nomes_acompanhantes: rsvp.nomes_acompanhantes }} />
                                   </div>
                                 </div>
+
+                                {/* Ticket button */}
                                 <button
                                   onClick={() => ticketRef.current && downloadTicket(ticketRef.current, rsvp.nome)}
-                                  title="Gerar ingresso"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-accent/40 text-accent text-xs font-medium hover:bg-accent/10 transition cursor-pointer"
+                                  title="Baixar ingresso"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-accent/40 text-accent text-xs font-medium hover:bg-accent/10 transition cursor-pointer"
                                 >
                                   <Ticket className="w-3.5 h-3.5" />
                                   Ingresso
                                 </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
+
+                                {/* Delete button */}
+                                {isConfirming ? (
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => handleDelete(rsvp.id, rsvp.nome)}
+                                      disabled={isDeleting}
+                                      className="px-2.5 py-1.5 rounded-full bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition cursor-pointer disabled:opacity-60"
+                                    >
+                                      {isDeleting ? "..." : "Confirmar"}
+                                    </button>
+                                    <button
+                                      onClick={() => setConfirmDeleteId(null)}
+                                      className="px-2.5 py-1.5 rounded-full border border-border text-xs text-muted-foreground hover:bg-secondary transition cursor-pointer"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleDelete(rsvp.id, rsvp.nome)}
+                                    title="Remover convidado"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Remover
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
               </div>
 
-              {/* Table Footer Stats */}
-              <div className="p-4 border-t border-border bg-secondary/5 text-xs text-muted-foreground flex justify-between items-center">
+              {/* Table footer */}
+              <div className="p-4 border-t border-border bg-secondary/5 text-xs text-muted-foreground flex justify-between items-center flex-wrap gap-2">
                 <div>
                   Mostrando <strong>{filteredRsvps.length}</strong> de <strong>{rsvps.length}</strong> respostas.
                 </div>
+                {(searchQuery || filterPresence !== "todos" || filterAcompanhantes !== "todos") && (
+                  <button
+                    onClick={() => { setSearchQuery(""); setFilterPresence("todos"); setFilterAcompanhantes("todos"); }}
+                    className="text-accent hover:underline cursor-pointer"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* RLS warning banner for delete */}
+            <p className="text-xs text-muted-foreground text-center opacity-60">
+              A remoção de convidados é permanente e não pode ser desfeita.
+            </p>
           </div>
         )}
       </main>
 
-      {/* Footer */}
       <footer className="py-6 text-center text-xs text-muted-foreground border-t border-border mt-auto">
-        <p>Painel de RSVP • Raquel &amp; Daniel • Feito com carinho 🤍</p>
+        <p>Painel de RSVP • Raquel & Daniel • Feito com carinho 🤍</p>
       </footer>
     </div>
   );
