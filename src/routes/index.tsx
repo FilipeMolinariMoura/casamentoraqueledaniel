@@ -40,6 +40,31 @@ function useCountdown(target: Date) {
 }
 
 function Index() {
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    const hasResponded = localStorage.getItem("rsvp_responded");
+    const hasDismissed = sessionStorage.getItem("rsvp_modal_dismissed");
+    if (!hasResponded && !hasDismissed) {
+      const timer = setTimeout(() => {
+        setShowModal(true);
+      }, 3500); // Abre o popup após 3.5 segundos
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleClose = () => {
+    setShowModal(false);
+    sessionStorage.setItem("rsvp_modal_dismissed", "true");
+  };
+
+  const handleSuccess = () => {
+    localStorage.setItem("rsvp_responded", "true");
+    setTimeout(() => {
+      setShowModal(false);
+    }, 2500); // Fecha o modal após 2.5s ao confirmar com sucesso
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Toaster richColors position="top-center" />
@@ -49,9 +74,46 @@ function Index() {
       <Details />
       <Celebration />
       <Menu />
-      <RSVP />
+      <RSVP onSuccess={() => localStorage.setItem("rsvp_responded", "true")} />
       <Footer />
+
+      {/* Botão Flutuante de RSVP */}
+      <div className="fixed bottom-5 left-5 z-40">
+        <button
+          onClick={() => setShowModal(true)}
+          aria-label="Confirmar Presença"
+          className="flex items-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition cursor-pointer"
+        >
+          <Heart className="w-4 h-4 text-accent fill-accent animate-pulse" />
+          <span className="text-xs font-medium hidden sm:inline">Confirmar Presença</span>
+        </button>
+      </div>
       <MusicPlayer />
+
+      {/* Popup / Modal de RSVP */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card w-full max-w-lg p-6 md:p-8 rounded-2xl border border-border shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground text-2xl p-1 cursor-pointer"
+              aria-label="Fechar"
+            >
+              &times;
+            </button>
+            <div className="text-center mb-6">
+              <p className="uppercase tracking-[0.3em] text-xs text-accent mb-2 flex items-center justify-center gap-2">
+                <Heart className="w-4 h-4" /> RSVP
+              </p>
+              <h3 className="font-serif text-3xl">Confirme sua presença</h3>
+              <p className="text-xs text-muted-foreground mt-2">
+                Por favor, confirme até <strong>01 de junho</strong>.
+              </p>
+            </div>
+            <RSVPForm onSuccess={handleSuccess} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -281,7 +343,38 @@ function Menu() {
   );
 }
 
-function RSVP() {
+function RSVP({ onSuccess }: { onSuccess?: () => void }) {
+  const past = new Date() > RSVP_DEADLINE;
+
+  return (
+    <section id="rsvp" className="py-24 px-6 bg-secondary/40">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3 flex items-center justify-center gap-2">
+            <Heart className="w-4 h-4" /> RSVP
+          </p>
+          <h2 className="font-serif text-5xl md:text-6xl">Confirme sua presença</h2>
+          <p className="mt-4 text-muted-foreground">
+            Por favor, confirme até <strong>01 de junho</strong>. Sua resposta nos ajuda na organização.
+          </p>
+        </div>
+
+        {past ? (
+          <div className="bg-card border border-border rounded-2xl p-10 text-center shadow-sm">
+            <h3 className="font-serif text-2xl mb-2">Confirmações encerradas</h3>
+            <p className="text-muted-foreground">O prazo para confirmar terminou em 01/06. Fale conosco diretamente.</p>
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
+            <RSVPForm onSuccess={onSuccess} />
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function RSVPForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const past = new Date() > RSVP_DEADLINE;
@@ -314,75 +407,59 @@ function RSVP() {
     }
     setDone(true);
     toast.success("Presença confirmada! Obrigado 💛");
+    if (onSuccess) onSuccess();
+  }
+
+  if (done) {
+    return (
+      <div className="text-center py-6 space-y-4">
+        <Heart className="w-12 h-12 mx-auto text-accent fill-accent animate-pulse" />
+        <h4 className="font-serif text-3xl">Recebemos sua resposta!</h4>
+        <p className="text-muted-foreground">Mal podemos esperar para celebrar com você. 💛</p>
+      </div>
+    );
   }
 
   return (
-    <section id="rsvp" className="py-24 px-6 bg-secondary/40">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-10">
-          <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3 flex items-center justify-center gap-2">
-            <Heart className="w-4 h-4" /> RSVP
-          </p>
-          <h2 className="font-serif text-5xl md:text-6xl">Confirme sua presença</h2>
-          <p className="mt-4 text-muted-foreground">
-            Por favor, confirme até <strong>01 de junho</strong>. Sua resposta nos ajuda na organização.
-          </p>
+    <form onSubmit={onSubmit} className="space-y-5">
+      <Field label="Nome completo *">
+        <input name="nome" required maxLength={120} className="input" placeholder="Seu nome" />
+      </Field>
+      <Field label="Telefone (opcional)">
+        <input name="telefone" maxLength={30} className="input" placeholder="(00) 00000-0000" />
+      </Field>
+      <Field label="Você poderá comparecer? *">
+        <div className="grid grid-cols-2 gap-3">
+          <label className="radio">
+            <input type="radio" name="presenca" value="sim" defaultChecked className="sr-only peer" />
+            <span className="radio-box text-sm">Sim, eu vou! 💛</span>
+          </label>
+          <label className="radio">
+            <input type="radio" name="presenca" value="nao" className="sr-only peer" />
+            <span className="radio-box text-sm">Infelizmente não</span>
+          </label>
         </div>
-
-        {done ? (
-          <div className="bg-card border border-border rounded-2xl p-10 text-center shadow-sm">
-            <Heart className="w-10 h-10 mx-auto text-accent mb-4" />
-            <h3 className="font-serif text-3xl mb-2">Recebemos sua resposta!</h3>
-            <p className="text-muted-foreground">Mal podemos esperar para celebrar com você.</p>
-          </div>
-        ) : past ? (
-          <div className="bg-card border border-border rounded-2xl p-10 text-center shadow-sm">
-            <h3 className="font-serif text-2xl mb-2">Confirmações encerradas</h3>
-            <p className="text-muted-foreground">O prazo para confirmar terminou em 01/06. Fale conosco diretamente.</p>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} className="bg-card border border-border rounded-2xl p-8 shadow-sm space-y-5">
-            <Field label="Nome completo *">
-              <input name="nome" required maxLength={120} className="input" placeholder="Seu nome" />
-            </Field>
-            <Field label="Telefone (opcional)">
-              <input name="telefone" maxLength={30} className="input" placeholder="(00) 00000-0000" />
-            </Field>
-            <Field label="Você poderá comparecer? *">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="radio">
-                  <input type="radio" name="presenca" value="sim" defaultChecked className="sr-only peer" />
-                  <span className="radio-box">Sim, eu vou! 💛</span>
-                </label>
-                <label className="radio">
-                  <input type="radio" name="presenca" value="nao" className="sr-only peer" />
-                  <span className="radio-box">Infelizmente não</span>
-                </label>
-              </div>
-            </Field>
-            <Field label="Acompanhantes (além de você)">
-              <input type="number" name="acompanhantes" min={0} max={10} defaultValue={0} className="input" />
-            </Field>
-            <Field label="Mensagem (opcional)">
-              <textarea name="mensagem" maxLength={500} rows={3} className="input" placeholder="Deixe um recadinho carinhoso" />
-            </Field>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-60"
-            >
-              {loading ? "Enviando..." : "Confirmar Presença"}
-            </button>
-          </form>
-        )}
-      </div>
+      </Field>
+      <Field label="Acompanhantes (além de você)">
+        <input type="number" name="acompanhantes" min={0} max={10} defaultValue={0} className="input" />
+      </Field>
+      <Field label="Mensagem (opcional)">
+        <textarea name="mensagem" maxLength={500} rows={3} className="input" placeholder="Deixe um recadinho carinhoso" />
+      </Field>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-60 cursor-pointer"
+      >
+        {loading ? "Enviando..." : "Confirmar Presença"}
+      </button>
       <style>{`
         .input{width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--border);background:var(--background);color:var(--foreground);outline:none;transition:border .2s}
         .input:focus{border-color:var(--ring)}
         .radio-box{display:flex;align-items:center;justify-content:center;padding:.85rem;border:1px solid var(--border);border-radius:.75rem;cursor:pointer;transition:all .2s;background:var(--background)}
         .radio input:checked + .radio-box, .peer:checked ~ .radio-box{border-color:var(--accent);background:color-mix(in oklab, var(--accent) 15%, transparent);font-weight:500}
       `}</style>
-    </section>
+    </form>
   );
 }
 
