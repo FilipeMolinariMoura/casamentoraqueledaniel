@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { TicketCard, downloadTicket, type TicketData } from "@/components/TicketCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
 import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles, Shirt, XCircle } from "lucide-react";
@@ -46,10 +47,7 @@ function Index() {
     const hasResponded = localStorage.getItem("rsvp_responded");
     const hasDismissed = sessionStorage.getItem("rsvp_modal_dismissed");
     if (!hasResponded && !hasDismissed) {
-      const timer = setTimeout(() => {
-        setShowModal(true);
-      }, 3500); // Abre o popup após 3.5 segundos
-      return () => clearTimeout(timer);
+      setShowModal(true); // Abre imediatamente ao entrar no site
     }
   }, []);
 
@@ -60,9 +58,7 @@ function Index() {
 
   const handleSuccess = () => {
     localStorage.setItem("rsvp_responded", "true");
-    setTimeout(() => {
-      setShowModal(false);
-    }, 2500); // Fecha o modal após 2.5s ao confirmar com sucesso
+    // Don't auto-close: user needs to see/download their ticket
   };
 
   return (
@@ -376,10 +372,11 @@ function RSVP({ onSuccess }: { onSuccess?: () => void }) {
 
 function RSVPForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [presenca, setPresenca] = useState<"sim" | "nao">("sim");
   const [numAcompanhantes, setNumAcompanhantes] = useState(0);
   const [nomesAcompanhantesList, setNomesAcompanhantesList] = useState<string[]>([]);
+  const ticketRef = useRef<HTMLDivElement>(null);
   const past = new Date() > RSVP_DEADLINE;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -427,18 +424,46 @@ function RSVPForm({ onSuccess }: { onSuccess?: () => void }) {
       toast.error("Não foi possível enviar. Tente novamente.");
       return;
     }
-    setDone(true);
-    toast.success("Presença confirmada! Obrigado ✨");
+    setTicketData({
+      nome: payload.nome,
+      acompanhantes: payload.acompanhantes,
+      nomes_acompanhantes: payload.nomes_acompanhantes,
+    });
+    toast.success("Presença confirmada! Baixe seu ingresso abaixo ✨");
     if (onSuccess) onSuccess();
   }
 
-  if (done) {
+  if (ticketData) {
     return (
-      <div className="text-center py-8 space-y-4 animate-fade-in">
-        <Sparkles className="w-12 h-12 mx-auto text-accent animate-pulse" />
-        <h4 className="font-serif text-3xl text-foreground">Recebemos sua resposta!</h4>
-        <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-          Mal podemos esperar para celebrar esse momento inesquecível com você. ✨
+      <div className="text-center space-y-6 animate-fade-in">
+        <div>
+          <Sparkles className="w-10 h-10 mx-auto text-accent mb-3" />
+          <h4 className="font-serif text-3xl text-foreground mb-1">Presença confirmada!</h4>
+          <p className="text-muted-foreground text-sm">
+            Seu ingresso está pronto para baixar. 🤍
+          </p>
+        </div>
+
+        {/* Ticket Preview - hidden off-screen for image capture */}
+        <div className="flex justify-center">
+          <div
+            ref={ticketRef}
+            style={{ display: "inline-block" }}
+          >
+            <TicketCard data={ticketData} />
+          </div>
+        </div>
+
+        <button
+          onClick={() => ticketRef.current && downloadTicket(ticketRef.current, ticketData.nome)}
+          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-semibold hover:opacity-95 hover:shadow-lg transition-all duration-300 cursor-pointer tracking-wider text-sm"
+        >
+          <Sparkles className="w-4 h-4" />
+          Baixar meu ingresso
+        </button>
+
+        <p className="text-xs text-muted-foreground">
+          Guarde o arquivo — é seu comprovante para o grande dia! 🤍
         </p>
       </div>
     );

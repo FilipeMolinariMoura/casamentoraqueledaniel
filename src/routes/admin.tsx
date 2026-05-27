@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
-import { Lock, Users, CheckCircle2, XCircle, Download, LogOut, ArrowLeft, Search, Filter } from "lucide-react";
+import { Lock, Users, CheckCircle2, XCircle, Download, LogOut, ArrowLeft, Search, Filter, Ticket } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { TicketCard, downloadTicket } from "@/components/TicketCard";
 
 export const Route = createFileRoute("/admin")({
   component: Admin,
@@ -325,47 +326,73 @@ function Admin() {
                         <th className="p-4 font-medium">Telefone</th>
                         <th className="p-4 font-medium">Mensagem</th>
                         <th className="p-4 font-medium">Data</th>
+                        <th className="p-4 font-medium text-center">Ingresso</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
-                      {filteredRsvps.map((rsvp) => (
-                        <tr key={rsvp.id} className="hover:bg-secondary/10 transition">
-                          <td className="p-4 align-top">
-                            <div className="font-semibold text-foreground">{rsvp.nome}</div>
-                            {rsvp.nomes_acompanhantes && rsvp.presenca === "sim" && (
-                              <div className="mt-2 space-y-1 pl-3 border-l-2 border-accent/40">
-                                {rsvp.nomes_acompanhantes.split(",").map((cName, idx) => (
-                                  <div key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-accent" />
-                                    <span>{cName.trim()} <span className="text-[10px] opacity-75 font-normal italic">(Acompanhante)</span></span>
+                        {filteredRsvps.map((rsvp) => {
+                          const ticketRef = { current: null as HTMLDivElement | null };
+                          return (
+                            <tr key={rsvp.id} className="hover:bg-secondary/10 transition">
+                              <td className="p-4 align-top">
+                                <div className="font-semibold text-foreground">{rsvp.nome}</div>
+                                {rsvp.nomes_acompanhantes && rsvp.presenca === "sim" && (
+                                  <div className="mt-2 space-y-1 pl-3 border-l-2 border-accent/40">
+                                    {rsvp.nomes_acompanhantes.split(",").map((cName, idx) => (
+                                      <div key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                        <span className="w-1 h-1 rounded-full bg-accent" />
+                                        <span>{cName.trim()} <span className="text-[10px] opacity-75 font-normal italic">(Acompanhante)</span></span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-4 align-top">
-                            {rsvp.presenca === "sim" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Confirmou
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                Não vai
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4 align-top text-center">{rsvp.acompanhantes}</td>
-                          <td className="p-4 align-top text-muted-foreground font-mono text-xs">{rsvp.telefone || "-"}</td>
-                          <td className="p-4 align-top max-w-xs truncate text-muted-foreground" title={rsvp.mensagem || ""}>
-                            {rsvp.mensagem || "-"}
-                          </td>
-                          <td className="p-4 align-top text-muted-foreground text-xs">
-                            {new Date(rsvp.created_at).toLocaleDateString("pt-BR")}
-                          </td>
-                        </tr>
-                      ))}
+                                )}
+                              </td>
+                              <td className="p-4 align-top">
+                                {rsvp.presenca === "sim" ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    Confirmou
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                    Não vai
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4 align-top text-center">{rsvp.acompanhantes}</td>
+                              <td className="p-4 align-top text-muted-foreground font-mono text-xs">{rsvp.telefone || "-"}</td>
+                              <td className="p-4 align-top max-w-xs truncate text-muted-foreground" title={rsvp.mensagem || ""}>
+                                {rsvp.mensagem || "-"}
+                              </td>
+                              <td className="p-4 align-top text-muted-foreground text-xs">
+                                {new Date(rsvp.created_at).toLocaleDateString("pt-BR")}
+                              </td>
+                              <td className="p-4 align-top text-center">
+                                {/* Hidden ticket div for capture */}
+                                <div
+                                  style={{ position: "fixed", top: "-9999px", left: "-9999px", opacity: 0, pointerEvents: "none" }}
+                                >
+                                  <div ref={(el) => { ticketRef.current = el; }}>
+                                    <TicketCard data={{
+                                      nome: rsvp.nome,
+                                      acompanhantes: rsvp.acompanhantes,
+                                      nomes_acompanhantes: rsvp.nomes_acompanhantes,
+                                    }} />
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => ticketRef.current && downloadTicket(ticketRef.current, rsvp.nome)}
+                                  title="Gerar ingresso"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-accent/40 text-accent text-xs font-medium hover:bg-accent/10 transition cursor-pointer"
+                                >
+                                  <Ticket className="w-3.5 h-3.5" />
+                                  Ingresso
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 )}
