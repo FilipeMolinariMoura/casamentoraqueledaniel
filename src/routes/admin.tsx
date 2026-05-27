@@ -319,10 +319,9 @@ function Admin() {
                   <table className="w-full border-collapse text-left text-sm">
                     <thead>
                       <tr className="border-b border-border bg-secondary/20 text-muted-foreground text-xs uppercase tracking-wider">
-                        <th className="p-4 font-medium">Nome</th>
+                        <th className="p-4 font-medium">Convidado / Acompanhantes</th>
                         <th className="p-4 font-medium">Presença</th>
-                        <th className="p-4 font-medium">Acompanhantes</th>
-                        <th className="p-4 font-medium">Nomes Acompanhantes</th>
+                        <th className="p-4 font-medium text-center">Acomp.</th>
                         <th className="p-4 font-medium">Telefone</th>
                         <th className="p-4 font-medium">Mensagem</th>
                         <th className="p-4 font-medium">Data</th>
@@ -331,8 +330,20 @@ function Admin() {
                     <tbody className="divide-y divide-border/60">
                       {filteredRsvps.map((rsvp) => (
                         <tr key={rsvp.id} className="hover:bg-secondary/10 transition">
-                          <td className="p-4 font-medium text-foreground">{rsvp.nome}</td>
-                          <td className="p-4">
+                          <td className="p-4 align-top">
+                            <div className="font-semibold text-foreground">{rsvp.nome}</div>
+                            {rsvp.nomes_acompanhantes && rsvp.presenca === "sim" && (
+                              <div className="mt-2 space-y-1 pl-3 border-l-2 border-accent/40">
+                                {rsvp.nomes_acompanhantes.split(",").map((cName, idx) => (
+                                  <div key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-accent" />
+                                    <span>{cName.trim()} <span className="text-[10px] opacity-75 font-normal italic">(Acompanhante)</span></span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 align-top">
                             {rsvp.presenca === "sim" ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -345,15 +356,12 @@ function Admin() {
                               </span>
                             )}
                           </td>
-                          <td className="p-4 text-center md:text-left">{rsvp.acompanhantes}</td>
-                          <td className="p-4 text-muted-foreground max-w-xs truncate" title={rsvp.nomes_acompanhantes || ""}>
-                            {rsvp.nomes_acompanhantes || "-"}
-                          </td>
-                          <td className="p-4 text-muted-foreground font-mono text-xs">{rsvp.telefone || "-"}</td>
-                          <td className="p-4 max-w-xs truncate text-muted-foreground" title={rsvp.mensagem || ""}>
+                          <td className="p-4 align-top text-center">{rsvp.acompanhantes}</td>
+                          <td className="p-4 align-top text-muted-foreground font-mono text-xs">{rsvp.telefone || "-"}</td>
+                          <td className="p-4 align-top max-w-xs truncate text-muted-foreground" title={rsvp.mensagem || ""}>
                             {rsvp.mensagem || "-"}
                           </td>
-                          <td className="p-4 text-muted-foreground text-xs">
+                          <td className="p-4 align-top text-muted-foreground text-xs">
                             {new Date(rsvp.created_at).toLocaleDateString("pt-BR")}
                           </td>
                         </tr>
