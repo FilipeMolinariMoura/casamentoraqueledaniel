@@ -100,11 +100,12 @@ function Admin() {
       toast.error("Não há respostas para exportar.");
       return;
     }
-    const headers = ["Nome", "Presença", "Acompanhantes", "Telefone", "Mensagem", "Data de Envio"];
+    const headers = ["Nome", "Presença", "Acompanhantes", "Nomes dos Acompanhantes", "Telefone", "Mensagem", "Data de Envio"];
     const rows = rsvps.map((r) => [
       r.nome,
       r.presenca === "sim" ? "Sim" : "Não",
       r.acompanhantes,
+      r.nomes_acompanhantes || "",
       r.telefone || "",
       (r.mensagem || "").replace(/\r?\n|\r/g, " "), // strip newlines
       new Date(r.created_at).toLocaleString("pt-BR"),
@@ -321,6 +322,7 @@ function Admin() {
                         <th className="p-4 font-medium">Nome</th>
                         <th className="p-4 font-medium">Presença</th>
                         <th className="p-4 font-medium">Acompanhantes</th>
+                        <th className="p-4 font-medium">Nomes Acompanhantes</th>
                         <th className="p-4 font-medium">Telefone</th>
                         <th className="p-4 font-medium">Mensagem</th>
                         <th className="p-4 font-medium">Data</th>
@@ -344,6 +346,9 @@ function Admin() {
                             )}
                           </td>
                           <td className="p-4 text-center md:text-left">{rsvp.acompanhantes}</td>
+                          <td className="p-4 text-muted-foreground max-w-xs truncate" title={rsvp.nomes_acompanhantes || ""}>
+                            {rsvp.nomes_acompanhantes || "-"}
+                          </td>
                           <td className="p-4 text-muted-foreground font-mono text-xs">{rsvp.telefone || "-"}</td>
                           <td className="p-4 max-w-xs truncate text-muted-foreground" title={rsvp.mensagem || ""}>
                             {rsvp.mensagem || "-"}
@@ -371,7 +376,7 @@ function Admin() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-xs text-muted-foreground border-t border-border mt-auto">
-        <p>Painel de RSVP • Raquel &amp; Daniel • Feito com 💛</p>
+        <p>Painel de RSVP • Raquel &amp; Daniel • Feito com carinho 🤍</p>
       </footer>
     </div>
   );

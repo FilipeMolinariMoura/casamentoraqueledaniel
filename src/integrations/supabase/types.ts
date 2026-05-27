@@ -21,6 +21,7 @@ export type Database = {
           id: string
           mensagem: string | null
           nome: string
+          nomes_acompanhantes: string | null
           presenca: string
           telefone: string | null
         }
@@ -30,6 +31,7 @@ export type Database = {
           id?: string
           mensagem?: string | null
           nome: string
+          nomes_acompanhantes?: string | null
           presenca: string
           telefone?: string | null
         }
@@ -39,6 +41,7 @@ export type Database = {
           id?: string
           mensagem?: string | null
           nome?: string
+          nomes_acompanhantes?: string | null
           presenca?: string
           telefone?: string | null
         }

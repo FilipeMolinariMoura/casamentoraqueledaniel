@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast, Toaster } from "sonner";
-import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles, Shirt } from "lucide-react";
+import { MapPin, Clock, Calendar, Heart, UtensilsCrossed, Sparkles, Shirt, XCircle } from "lucide-react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
@@ -82,10 +82,10 @@ function Index() {
         <button
           onClick={() => setShowModal(true)}
           aria-label="Confirmar Presença"
-          className="flex items-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition cursor-pointer"
+          className="flex items-center gap-2 px-5 py-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:opacity-95 transition-all duration-300 cursor-pointer border border-accent/20"
         >
-          <Heart className="w-4 h-4 text-accent fill-accent animate-pulse" />
-          <span className="text-xs font-medium hidden sm:inline">Confirmar Presença</span>
+          <Sparkles className="w-4 h-4 text-accent animate-pulse" />
+          <span className="text-xs font-medium hidden sm:inline tracking-wide">Confirmar Presença</span>
         </button>
       </div>
       <MusicPlayer />
@@ -102,10 +102,10 @@ function Index() {
               &times;
             </button>
             <div className="text-center mb-6">
-              <p className="uppercase tracking-[0.3em] text-xs text-accent mb-2 flex items-center justify-center gap-2">
-                <Heart className="w-4 h-4" /> RSVP
+              <p className="uppercase tracking-[0.3em] text-xs text-accent mb-2 flex items-center justify-center gap-2 font-medium">
+                <Sparkles className="w-4 h-4 text-accent" /> RSVP
               </p>
-              <h3 className="font-serif text-3xl">Confirme sua presença</h3>
+              <h3 className="font-serif text-3.5xl tracking-wide text-foreground">Confirme sua presença</h3>
               <p className="text-xs text-muted-foreground mt-2">
                 Por favor, confirme até <strong>01 de junho</strong>.
               </p>
@@ -350,10 +350,10 @@ function RSVP({ onSuccess }: { onSuccess?: () => void }) {
     <section id="rsvp" className="py-24 px-6 bg-secondary/40">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-10">
-          <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3 flex items-center justify-center gap-2">
-            <Heart className="w-4 h-4" /> RSVP
+          <p className="uppercase tracking-[0.3em] text-xs text-accent mb-3 flex items-center justify-center gap-2 font-medium">
+            <Sparkles className="w-4 h-4 text-accent" /> RSVP
           </p>
-          <h2 className="font-serif text-5xl md:text-6xl">Confirme sua presença</h2>
+          <h2 className="font-serif text-5xl md:text-6xl tracking-wide">Confirme sua presença</h2>
           <p className="mt-4 text-muted-foreground">
             Por favor, confirme até <strong>01 de junho</strong>. Sua resposta nos ajuda na organização.
           </p>
@@ -377,19 +377,31 @@ function RSVP({ onSuccess }: { onSuccess?: () => void }) {
 function RSVPForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [presenca, setPresenca] = useState<"sim" | "nao">("sim");
+  const [numAcompanhantes, setNumAcompanhantes] = useState(0);
+  const [nomesAcompanhantesList, setNomesAcompanhantesList] = useState<string[]>([]);
   const past = new Date() > RSVP_DEADLINE;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (past) return;
     const fd = new FormData(e.currentTarget);
+
+    const companionNames = nomesAcompanhantesList
+      .slice(0, numAcompanhantes)
+      .map(name => name.trim())
+      .filter(name => name !== "")
+      .join(", ");
+
     const payload = {
       nome: String(fd.get("nome") || "").trim(),
-      presenca: String(fd.get("presenca") || "sim"),
-      acompanhantes: Number(fd.get("acompanhantes") || 0),
+      presenca: presenca,
+      acompanhantes: presenca === "sim" ? numAcompanhantes : 0,
+      nomes_acompanhantes: presenca === "sim" && numAcompanhantes > 0 ? companionNames || null : null,
       telefone: String(fd.get("telefone") || "").trim() || null,
       mensagem: String(fd.get("mensagem") || "").trim() || null,
     };
+
     if (!payload.nome) {
       toast.error("Por favor, informe seu nome.");
       return;
@@ -398,6 +410,16 @@ function RSVPForm({ onSuccess }: { onSuccess?: () => void }) {
       toast.error("Nome muito longo.");
       return;
     }
+    if (presenca === "sim" && numAcompanhantes > 0) {
+      const filledCompanionsCount = nomesAcompanhantesList
+        .slice(0, numAcompanhantes)
+        .filter(name => name.trim() !== "").length;
+      if (filledCompanionsCount < numAcompanhantes) {
+        toast.error("Por favor, preencha o nome de todos os acompanhantes.");
+        return;
+      }
+    }
+
     setLoading(true);
     const { error } = await supabase.from("rsvps").insert(payload);
     setLoading(false);
@@ -406,58 +428,124 @@ function RSVPForm({ onSuccess }: { onSuccess?: () => void }) {
       return;
     }
     setDone(true);
-    toast.success("Presença confirmada! Obrigado 💛");
+    toast.success("Presença confirmada! Obrigado ✨");
     if (onSuccess) onSuccess();
   }
 
   if (done) {
     return (
-      <div className="text-center py-6 space-y-4">
-        <Heart className="w-12 h-12 mx-auto text-accent fill-accent animate-pulse" />
-        <h4 className="font-serif text-3xl">Recebemos sua resposta!</h4>
-        <p className="text-muted-foreground">Mal podemos esperar para celebrar com você. 💛</p>
+      <div className="text-center py-8 space-y-4 animate-fade-in">
+        <Sparkles className="w-12 h-12 mx-auto text-accent animate-pulse" />
+        <h4 className="font-serif text-3xl text-foreground">Recebemos sua resposta!</h4>
+        <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+          Mal podemos esperar para celebrar esse momento inesquecível com você. ✨
+        </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-6">
       <Field label="Nome completo *">
-        <input name="nome" required maxLength={120} className="input" placeholder="Seu nome" />
+        <input name="nome" required maxLength={120} className="input text-sm" placeholder="Seu nome" />
       </Field>
       <Field label="Telefone (opcional)">
-        <input name="telefone" maxLength={30} className="input" placeholder="(00) 00000-0000" />
+        <input name="telefone" maxLength={30} className="input text-sm" placeholder="(00) 00000-0000" />
       </Field>
+      
       <Field label="Você poderá comparecer? *">
-        <div className="grid grid-cols-2 gap-3">
-          <label className="radio">
-            <input type="radio" name="presenca" value="sim" defaultChecked className="sr-only peer" />
-            <span className="radio-box text-sm">Sim, eu vou! 💛</span>
-          </label>
-          <label className="radio">
-            <input type="radio" name="presenca" value="nao" className="sr-only peer" />
-            <span className="radio-box text-sm">Infelizmente não</span>
-          </label>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setPresenca("sim")}
+            className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition duration-300 cursor-pointer ${
+              presenca === "sim"
+                ? "border-accent bg-accent/5 text-foreground shadow-sm scale-[1.02]"
+                : "border-border bg-card text-muted-foreground hover:border-accent/40"
+            }`}
+          >
+            <Sparkles className={`w-5 h-5 mb-2 transition-transform duration-300 ${presenca === "sim" ? "scale-110 text-accent" : ""}`} />
+            <span className="text-sm font-semibold tracking-wide">Sim, eu vou!</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPresenca("nao")}
+            className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition duration-300 cursor-pointer ${
+              presenca === "nao"
+                ? "border-muted-foreground/60 bg-muted/20 text-foreground shadow-sm scale-[1.02]"
+                : "border-border bg-card text-muted-foreground hover:border-muted-foreground/30"
+            }`}
+          >
+            <XCircle className={`w-5 h-5 mb-2 transition-transform duration-300 ${presenca === "nao" ? "scale-110 text-muted-foreground" : ""}`} />
+            <span className="text-sm font-semibold tracking-wide">Infelizmente não</span>
+          </button>
         </div>
       </Field>
-      <Field label="Acompanhantes (além de você)">
-        <input type="number" name="acompanhantes" min={0} max={10} defaultValue={0} className="input" />
-      </Field>
+
+      {presenca === "sim" && (
+        <>
+          <Field label="Acompanhantes (além de você)">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setNumAcompanhantes(Math.max(0, numAcompanhantes - 1))}
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-lg hover:border-accent hover:text-accent transition font-medium cursor-pointer"
+              >
+                -
+              </button>
+              <span className="w-12 text-center font-serif text-2xl font-semibold">{numAcompanhantes}</span>
+              <button
+                type="button"
+                onClick={() => setNumAcompanhantes(Math.min(10, numAcompanhantes + 1))}
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-lg hover:border-accent hover:text-accent transition font-medium cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+          </Field>
+
+          {numAcompanhantes > 0 && (
+            <div className="space-y-3 p-5 rounded-2xl bg-secondary/35 border border-border/40 animate-fade-in">
+              <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-1">
+                Nome dos acompanhantes
+              </p>
+              {Array.from({ length: numAcompanhantes }).map((_, idx) => (
+                <div key={idx} className="space-y-1">
+                  <input
+                    type="text"
+                    required
+                    placeholder={`Nome completo do acompanhante ${idx + 1}`}
+                    value={nomesAcompanhantesList[idx] || ""}
+                    onChange={(e) => {
+                      const newNames = [...nomesAcompanhantesList];
+                      newNames[idx] = e.target.value;
+                      setNomesAcompanhantesList(newNames);
+                    }}
+                    className="input text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       <Field label="Mensagem (opcional)">
-        <textarea name="mensagem" maxLength={500} rows={3} className="input" placeholder="Deixe um recadinho carinhoso" />
+        <textarea name="mensagem" maxLength={500} rows={3} className="input text-sm" placeholder="Deixe um recadinho carinhoso para nós" />
       </Field>
+
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-60 cursor-pointer"
+        className="w-full py-3.5 rounded-full bg-primary text-primary-foreground font-semibold hover:opacity-95 hover:shadow-lg transition-all duration-300 disabled:opacity-60 cursor-pointer tracking-wider text-sm"
       >
         {loading ? "Enviando..." : "Confirmar Presença"}
       </button>
+
       <style>{`
         .input{width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--border);background:var(--background);color:var(--foreground);outline:none;transition:border .2s}
         .input:focus{border-color:var(--ring)}
-        .radio-box{display:flex;align-items:center;justify-content:center;padding:.85rem;border:1px solid var(--border);border-radius:.75rem;cursor:pointer;transition:all .2s;background:var(--background)}
-        .radio input:checked + .radio-box, .peer:checked ~ .radio-box{border-color:var(--accent);background:color-mix(in oklab, var(--accent) 15%, transparent);font-weight:500}
       `}</style>
     </form>
   );
@@ -477,7 +565,7 @@ function Footer() {
     <footer className="py-12 text-center text-sm text-muted-foreground border-t border-border">
       <p className="font-serif text-2xl text-foreground mb-2">Raquel &amp; Daniel</p>
       <p>20 de Junho • Yellow Door Pub • Catanduva</p>
-      <p className="mt-4 opacity-70">Feito com 💛</p>
+      <p className="mt-4 opacity-70">Feito com carinho 🤍</p>
     </footer>
   );
 }
