@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
 });
 
 const WEDDING_DATE = new Date("2026-06-20T11:30:00-03:00");
-const RSVP_DEADLINE = new Date("2026-06-01T23:59:59-03:00");
+const RSVP_DEADLINE = new Date("2026-06-20T23:59:59-03:00");
 
 function useCountdown(target: Date) {
   const [now, setNow] = useState<Date | null>(null);
@@ -103,7 +103,7 @@ function Index() {
               </p>
               <h3 className="font-serif text-3.5xl tracking-wide text-foreground">Confirme sua presença</h3>
               <p className="text-xs text-muted-foreground mt-2">
-                Por favor, confirme até <strong>01 de junho</strong>.
+                Por favor, confirme até <strong>20 de junho</strong>.
               </p>
             </div>
             <RSVPForm onSuccess={handleSuccess} />
@@ -351,14 +351,14 @@ function RSVP({ onSuccess }: { onSuccess?: () => void }) {
           </p>
           <h2 className="font-serif text-5xl md:text-6xl tracking-wide">Confirme sua presença</h2>
           <p className="mt-4 text-muted-foreground">
-            Por favor, confirme até <strong>01 de junho</strong>. Sua resposta nos ajuda na organização.
+            Por favor, confirme até <strong>20 de junho</strong>. Sua resposta nos ajuda na organização.
           </p>
         </div>
 
         {past ? (
           <div className="bg-card border border-border rounded-2xl p-10 text-center shadow-sm">
             <h3 className="font-serif text-2xl mb-2">Confirmações encerradas</h3>
-            <p className="text-muted-foreground">O prazo para confirmar terminou em 01/06. Fale conosco diretamente.</p>
+            <p className="text-muted-foreground">O prazo para confirmar terminou em 20/06. Fale conosco diretamente.</p>
           </div>
         ) : (
           <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
